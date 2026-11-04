@@ -28,7 +28,7 @@ func New(cfg Config) http.Handler {
 		newID = sequentialIDs()
 	}
 	svc := payments.NewService(payments.NewMemoryStore(), now, newID)
-	return api.Routes(svc)
+	return api.WithRequestID(api.Routes(svc))
 }
 
 // sequentialIDs returns an id generator that counts 1, 2, 3 and so on. Ids only need to be unique in one process.
