@@ -9,15 +9,17 @@ import (
 	"time"
 
 	"github.com/aarush323/heimdall-fixture-pay/internal/payments"
+	"github.com/aarush323/heimdall-fixture-pay/internal/refunds"
 )
 
 var testNow = time.Date(2026, 11, 4, 9, 0, 0, 0, time.UTC)
 
-// newTestHandler returns the payments API over a fresh store with a fixed clock.
+// newTestHandler returns the API over a fresh store with a fixed clock.
 func newTestHandler() http.Handler {
+	store := payments.NewMemoryStore()
 	newID := func() string { return "id_1" }
-	svc := payments.NewService(payments.NewMemoryStore(), func() time.Time { return testNow }, newID)
-	return Routes(svc)
+	now := func() time.Time { return testNow }
+	return Routes(payments.NewService(store, now, newID), refunds.NewService(store, now, newID))
 }
 
 func post(t *testing.T, h http.Handler, merchant, body string) *httptest.ResponseRecorder {
