@@ -25,7 +25,7 @@ type refundJSON struct {
 	MerchantID string    `json:"merchant_id"`
 	Amount     int64     `json:"amount"`
 	Currency   string    `json:"currency"`
-	Reference  string    `json:"reference"`
+	RefundRef  string    `json:"refund_ref"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 
@@ -37,7 +37,7 @@ func toRefundJSON(r refunds.Refund) refundJSON {
 		MerchantID: r.MerchantID,
 		Amount:     r.Amount,
 		Currency:   r.Currency,
-		Reference:  r.ID,
+		RefundRef:  r.ID,
 		CreatedAt:  r.CreatedAt,
 	}
 }
@@ -74,14 +74,15 @@ func createRefund(svc *refunds.Service) http.HandlerFunc {
 	}
 }
 
-// getRefund handles GET /refunds/{id} for any caller that names a merchant.
+// getRefund handles GET /refunds/{id}. Only the merchant that made the refund can read it.
 func getRefund(svc *refunds.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(merchantHeader) == "" {
+		merchant := r.Header.Get(merchantHeader)
+		if merchant == "" {
 			writeError(w, http.StatusUnauthorized, "missing X-Merchant-ID header")
 			return
 		}
-		ref, err := svc.Get(r.PathValue("id"))
+		ref, err := svc.Get(merchant, r.PathValue("id"))
 		if err != nil {
 			writeRefundError(w, err)
 			return

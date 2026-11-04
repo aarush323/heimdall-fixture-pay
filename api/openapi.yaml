@@ -146,7 +146,7 @@ components:
           description: Amount in cents, at most what is left of the payment
     Refund:
       type: object
-      required: [id, payment_id, merchant_id, amount, currency, reference, created_at]
+      required: [id, payment_id, merchant_id, amount, currency, refund_ref, created_at]
       properties:
         id:
           type: string
@@ -159,13 +159,9 @@ components:
           format: int64
         currency:
           type: string
-        reference:
-          type: string
-          description: The refund's reference in the ledger.
         refund_ref:
           type: string
-          deprecated: true
-          description: Deprecated alias of reference, kept in this file for one release.
+          description: The refund's reference in the ledger.
         created_at:
           type: string
           format: date-time

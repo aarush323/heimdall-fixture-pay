@@ -73,7 +73,7 @@ func TestGetReturnsTheRefund(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	got, err := svc.Get(created.ID)
+	got, err := svc.Get("m-1", created.ID)
 	if err != nil || got.ID != created.ID {
 		t.Fatalf("Get(%q) = %+v, %v; want the created refund", created.ID, got, err)
 	}
@@ -81,7 +81,7 @@ func TestGetReturnsTheRefund(t *testing.T) {
 
 func TestGetOfAnUnknownRefundIsNotFound(t *testing.T) {
 	svc, _ := newFixture(t)
-	if _, err := svc.Get("ref_nope"); !errors.Is(err, ErrNotFound) {
+	if _, err := svc.Get("m-1", "ref_nope"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("Get(unknown) err = %v, want ErrNotFound", err)
 	}
 }
@@ -100,5 +100,27 @@ func TestInvalidRequestsAreRejectedAsInvalid(t *testing.T) {
 				t.Fatalf("Create err = %v, want ErrInvalid", err)
 			}
 		})
+	}
+}
+
+func TestSeveralPartialRefundsCannotExceedThePayment(t *testing.T) {
+	svc, payID := newFixture(t)
+	if _, _, err := svc.Create(Request{MerchantID: "m-1", PaymentID: payID, Amount: 60, IdempotencyKey: "k1"}); err != nil {
+		t.Fatalf("first refund of 60: %v", err)
+	}
+	_, _, err := svc.Create(Request{MerchantID: "m-1", PaymentID: payID, Amount: 60, IdempotencyKey: "k2"})
+	if !errors.Is(err, ErrExceedsPayment) {
+		t.Fatalf("second refund of 60 on a payment of 100 err = %v, want ErrExceedsPayment", err)
+	}
+}
+
+func TestAnotherMerchantCannotReadARefund(t *testing.T) {
+	svc, payID := newFixture(t)
+	created, _, err := svc.Create(Request{MerchantID: "m-1", PaymentID: payID, Amount: 10, IdempotencyKey: "k1"})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := svc.Get("m-2", created.ID); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("Get by m-2 err = %v, want ErrNotFound", err)
 	}
 }

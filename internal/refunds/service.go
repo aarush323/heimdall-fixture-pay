@@ -53,8 +53,9 @@ func (s *Service) Create(req Request) (Refund, bool, error) {
 	if !ok || pay.MerchantID != req.MerchantID {
 		return Refund{}, false, ErrPaymentNotFound
 	}
-	if req.Amount > pay.Amount {
-		return Refund{}, false, fmt.Errorf("%w: %d is more than the payment's %d", ErrExceedsPayment, req.Amount, pay.Amount)
+	remaining := pay.Amount - s.store.refundedFor(pay.ID)
+	if req.Amount > remaining {
+		return Refund{}, false, fmt.Errorf("%w: %d is more than the %d left", ErrExceedsPayment, req.Amount, remaining)
 	}
 	r := Refund{
 		ID:         s.newID(),
@@ -68,12 +69,13 @@ func (s *Service) Create(req Request) (Refund, bool, error) {
 	return r, false, nil
 }
 
-// Get returns the refund with id.
-func (s *Service) Get(id string) (Refund, error) {
+// Get returns the refund with id if merchantID made it. Any other caller gets ErrNotFound, so a refund's
+// existence is not revealed to other merchants.
+func (s *Service) Get(merchantID, id string) (Refund, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, ok := s.store.get(id)
-	if !ok {
+	if !ok || r.MerchantID != merchantID {
 		return Refund{}, ErrNotFound
 	}
 	return r, nil
