@@ -13,6 +13,8 @@ A tiny payments service used as a hermetic fixture. It speaks HTTP, keeps everyt
 | Method | Path | Purpose |
 |---|---|---|
 | POST | /payments | create a payment for the calling merchant |
+| POST | /refunds | refund all or part of a payment; `Idempotency-Key` is required |
+| GET | /refunds/{id} | read a refund |
 
 ## Tests
 

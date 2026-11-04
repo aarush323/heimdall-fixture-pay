@@ -6,18 +6,21 @@ import (
 	"net/http"
 
 	"github.com/aarush323/heimdall-fixture-pay/internal/payments"
+	"github.com/aarush323/heimdall-fixture-pay/internal/refunds"
 )
 
 // merchantHeader names the calling merchant. Every request carries it.
 const merchantHeader = "X-Merchant-ID"
 
-// maxBodyBytes bounds a request body; a payment request is a few dozen bytes.
+// maxBodyBytes bounds a request body; a payment or refund request is a few dozen bytes.
 const maxBodyBytes = 1 << 16
 
-// Routes returns the handler for the payments API.
-func Routes(svc *payments.Service) http.Handler {
+// Routes returns the handler for the payments and refunds API.
+func Routes(pays *payments.Service, refs *refunds.Service) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /payments", createPayment(svc))
+	mux.HandleFunc("POST /payments", createPayment(pays))
+	mux.HandleFunc("POST /refunds", createRefund(refs))
+	mux.HandleFunc("GET /refunds/{id}", getRefund(refs))
 	return mux
 }
 
