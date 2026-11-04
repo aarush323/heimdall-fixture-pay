@@ -17,7 +17,7 @@ var testNow = time.Date(2026, 11, 4, 9, 0, 0, 0, time.UTC)
 func newTestHandler() http.Handler {
 	newID := func() string { return "id_1" }
 	svc := payments.NewService(payments.NewMemoryStore(), func() time.Time { return testNow }, newID)
-	return Routes(svc)
+	return Routes(Deps{Payments: svc})
 }
 
 func post(t *testing.T, h http.Handler, merchant, body string) *httptest.ResponseRecorder {

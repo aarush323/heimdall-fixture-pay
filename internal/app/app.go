@@ -9,6 +9,7 @@ import (
 
 	"github.com/aarush323/heimdall-fixture-pay/internal/api"
 	"github.com/aarush323/heimdall-fixture-pay/internal/payments"
+	"github.com/aarush323/heimdall-fixture-pay/internal/webhooks"
 )
 
 // Config holds the injectable parts of the service. A nil field means the real clock or sequential ids.
@@ -17,7 +18,7 @@ type Config struct {
 	NewID func() string
 }
 
-// New returns the HTTP handler of the payments service over a fresh in-memory store.
+// New returns the HTTP handler of the payments and webhooks services over a fresh in-memory store.
 func New(cfg Config) http.Handler {
 	now := cfg.Now
 	if now == nil {
@@ -27,8 +28,9 @@ func New(cfg Config) http.Handler {
 	if newID == nil {
 		newID = sequentialIDs()
 	}
-	svc := payments.NewService(payments.NewMemoryStore(), now, newID)
-	return api.Routes(svc)
+	pays := payments.NewService(payments.NewMemoryStore(), now, newID)
+	hooks := webhooks.NewService(webhooks.NewStore(), now, newID)
+	return api.Routes(api.Deps{Payments: pays, Webhooks: hooks})
 }
 
 // sequentialIDs returns an id generator that counts 1, 2, 3 and so on. Ids only need to be unique in one process.

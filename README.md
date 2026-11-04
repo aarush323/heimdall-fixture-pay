@@ -13,6 +13,16 @@ A tiny payments service used as a hermetic fixture. It speaks HTTP, keeps everyt
 | Method | Path | Purpose |
 |---|---|---|
 | POST | /payments | create a payment for the calling merchant |
+| POST | /webhooks/subscriptions | subscribe a URL to payment and refund events |
+| GET | /webhooks/subscriptions | list the merchant's subscriptions |
+| DELETE | /webhooks/subscriptions/{id} | deactivate a subscription |
+| GET | /webhooks/deliveries | list delivery outcomes |
+
+## Webhooks
+
+Events are signed with the subscription secret in the `Webhook-Signature` header. Failed deliveries
+are retried with capped backoff. `internal/webhooks` holds the rules; the dispatcher is not yet wired to
+the payment handlers.
 
 ## Tests
 

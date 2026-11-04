@@ -26,9 +26,8 @@ type paymentJSON struct {
 // createPayment handles POST /payments for the merchant named in the header.
 func createPayment(svc *payments.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		merchant := r.Header.Get(merchantHeader)
-		if merchant == "" {
-			writeError(w, http.StatusUnauthorized, "missing X-Merchant-ID header")
+		merchant, ok := requireMerchant(w, r)
+		if !ok {
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)

@@ -6,18 +6,29 @@ import (
 	"net/http"
 
 	"github.com/aarush323/heimdall-fixture-pay/internal/payments"
+	"github.com/aarush323/heimdall-fixture-pay/internal/webhooks"
 )
 
 // merchantHeader names the calling merchant. Every request carries it.
 const merchantHeader = "X-Merchant-ID"
 
-// maxBodyBytes bounds a request body; a payment request is a few dozen bytes.
+// maxBodyBytes bounds a request body; every request here is a few hundred bytes.
 const maxBodyBytes = 1 << 16
 
-// Routes returns the handler for the payments API.
-func Routes(svc *payments.Service) http.Handler {
+// Deps are the services the routes serve.
+type Deps struct {
+	Payments *payments.Service
+	Webhooks *webhooks.Service
+}
+
+// Routes returns the handler for the payments and webhooks API.
+func Routes(d Deps) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /payments", createPayment(svc))
+	mux.HandleFunc("POST /payments", createPayment(d.Payments))
+	mux.HandleFunc("POST /webhooks/subscriptions", createSubscription(d.Webhooks))
+	mux.HandleFunc("GET /webhooks/subscriptions", listSubscriptions(d.Webhooks))
+	mux.HandleFunc("DELETE /webhooks/subscriptions/{id}", deleteSubscription(d.Webhooks))
+	mux.HandleFunc("GET /webhooks/deliveries", listDeliveries(d.Webhooks))
 	return mux
 }
 
@@ -37,4 +48,14 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 // writeError writes a rejected request as errorJSON.
 func writeError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, errorJSON{Error: msg})
+}
+
+// requireMerchant returns the calling merchant, or answers 401 and reports false.
+func requireMerchant(w http.ResponseWriter, r *http.Request) (string, bool) {
+	merchant := r.Header.Get(merchantHeader)
+	if merchant == "" {
+		writeError(w, http.StatusUnauthorized, "missing X-Merchant-ID header")
+		return "", false
+	}
+	return merchant, true
 }
