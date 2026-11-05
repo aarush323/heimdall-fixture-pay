@@ -5,7 +5,7 @@ policy_owners: [approver]
 people:
   # chat ids are placeholders; `heimdall connect people` fills the real Switch ids (D140)
   author:   { github: aarush323, chat: dev-author,   teams: [payments] }
-  approver: { github: prathameshk421,    chat: dev-approver, teams: [payments] }
+  approver: { github: temporaryhameshakagroup-alt,    chat: dev-approver, teams: [payments] }
   bob:      { chat: rev-backend,  agent: bob-reviewer, teams: [payments] }
   eli:      { chat: rev-frontend, agent: eli-reviewer, teams: [consumer] }
   # ana signs off tests in the room, so the policy needs a GitHub login for her as an approver; this placeholder is not a real account (D158)
