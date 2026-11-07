@@ -3,6 +3,14 @@ info:
   title: Pay
   version: 1.0.0
 paths:
+  /healthz:
+    get:
+      summary: Liveness probe. Needs no merchant header.
+      responses:
+        "200":
+          description: The service is up. Body is {"status":"ok"}.
+        "405":
+          description: Any method other than GET.
   /payments:
     post:
       summary: Create a payment for the calling merchant
