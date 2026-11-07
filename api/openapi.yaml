@@ -26,6 +26,30 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+  /payments/{id}/refunds/{refund_id}/receipt:
+    get:
+      summary: Get the receipt of a refund
+      operationId: getRefundReceipt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: refund_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The receipt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+        '404':
+          $ref: '#/components/responses/Error'
 components:
   parameters:
     MerchantID:
@@ -70,6 +94,17 @@ components:
         created_at:
           type: string
           format: date-time
+    Receipt:
+      type: object
+      required: [refund_id, amount, currency]
+      properties:
+        refund_id:
+          type: string
+        amount:
+          type: integer
+          format: int64
+        currency:
+          type: string
     Error:
       type: object
       required: [error]
