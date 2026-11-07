@@ -18,7 +18,13 @@ const maxBodyBytes = 1 << 16
 func Routes(svc *payments.Service) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /payments", createPayment(svc))
+	mux.HandleFunc("GET /healthz", healthz)
 	return mux
+}
+
+// healthz answers that the service is up. It needs no merchant and touches no store, so it stays cheap.
+func healthz(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // errorJSON is the body of every rejected request.
