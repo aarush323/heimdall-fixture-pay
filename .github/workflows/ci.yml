@@ -26,4 +26,5 @@ jobs:
         run: go test $(go list ./... | grep -v /tests/heimdall)
       - name: Heimdall acceptance tests
         run: |
-          if [ -d tests/heimdall ]; then go test ./tests/heimdall/...; else echo "No Heimdall tests on this commit"; fi
+          pkgs=$(go list ./tests/heimdall/... 2>/dev/null || true)
+          if [ -n "$pkgs" ]; then go test $pkgs; else echo "No Heimdall tests on this commit"; fi
