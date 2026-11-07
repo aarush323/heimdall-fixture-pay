@@ -3,9 +3,9 @@ workflow: default
 approvers: { default: [approver], tenant_data: [ana], money_movement: [approver] }
 policy_owners: [approver]
 people:
-  # chat ids are placeholders; `heimdall connect people` fills the real Switch ids (D140)
+  # approver's chat id is the owner's Discord sender in Switch; the other chat ids are still placeholders (D140)
   author:   { github: aarush323, chat: dev-author,   teams: [payments] }
-  approver: { github: temporaryhameshakagroup-alt,    chat: dev-approver, teams: [payments] }
+  approver: { github: temporaryhameshakagroup-alt,    chat: "@switch-discord-35755c56-ff93-43ac-a7a3-3e46afa3c3a0-prathameshk421:localhost", teams: [payments] }
   bob:      { chat: rev-backend,  agent: bob-reviewer, teams: [payments] }
   eli:      { chat: rev-frontend, agent: eli-reviewer, teams: [consumer] }
   # ana signs off tests in the room, so the policy needs a GitHub login for her as an approver; this placeholder is not a real account (D158)
