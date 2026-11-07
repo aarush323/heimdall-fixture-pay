@@ -18,7 +18,18 @@ const maxBodyBytes = 1 << 16
 func Routes(svc *payments.Service) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /payments", createPayment(svc))
+	mux.HandleFunc("/healthz", healthz)
 	return mux
+}
+
+// healthz answers a liveness probe. It needs no merchant, because the caller is the platform, not a merchant.
+func healthz(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // errorJSON is the body of every rejected request.
