@@ -26,6 +26,18 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+  /healthz:
+    get:
+      summary: Report that the service is up
+      description: Needs no X-Merchant-ID header and reads no store.
+      operationId: healthz
+      responses:
+        '200':
+          description: The service is up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
 components:
   parameters:
     MerchantID:
@@ -70,6 +82,13 @@ components:
         created_at:
           type: string
           format: date-time
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
     Error:
       type: object
       required: [error]
