@@ -17,7 +17,7 @@ type createPaymentJSON struct {
 // paymentJSON is the wire form of a payment, as documented in api/openapi.yaml.
 type paymentJSON struct {
 	ID         string    `json:"id"`
-	MerchantID string    `json:"merchant_id"`
+	MerchantID string    `json:"merchant"`
 	Amount     int64     `json:"amount"`
 	Currency   string    `json:"currency"`
 	CreatedAt  time.Time `json:"created_at"`
