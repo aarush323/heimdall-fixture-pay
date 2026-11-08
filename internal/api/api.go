@@ -18,6 +18,7 @@ const maxBodyBytes = 1 << 16
 func Routes(svc *payments.Service) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /payments", createPayment(svc))
+	mux.HandleFunc("POST /payments/{id}/refunds", createRefund(svc))
 	mux.HandleFunc("GET /healthz", healthz)
 	return mux
 }

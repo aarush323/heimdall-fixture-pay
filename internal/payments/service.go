@@ -7,14 +7,15 @@ import (
 
 // Service creates payments. Now and newID are injected, so tests need no real clock or randomness.
 type Service struct {
-	store *MemoryStore
-	now   func() time.Time
-	newID func() string
+	store   *MemoryStore
+	refunds *refundLog
+	now     func() time.Time
+	newID   func() string
 }
 
 // NewService returns a Service that records payments in store.
 func NewService(store *MemoryStore, now func() time.Time, newID func() string) *Service {
-	return &Service{store: store, now: now, newID: newID}
+	return &Service{store: store, refunds: &refundLog{}, now: now, newID: newID}
 }
 
 // Create validates the request, records the payment for merchantID and returns it.
