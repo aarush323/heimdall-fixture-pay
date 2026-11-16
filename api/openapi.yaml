@@ -26,6 +26,29 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+  /payments/{id}:
+    get:
+      summary: Read one of the calling merchant's payments
+      description: Another merchant's payment answers 404, the same as an unknown id.
+      operationId: getPayment
+      parameters:
+        - $ref: '#/components/parameters/MerchantID'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
   /healthz:
     get:
       summary: Report that the service is up

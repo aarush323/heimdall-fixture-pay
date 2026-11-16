@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -42,12 +43,32 @@ func createPayment(svc *payments.Service) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		writeJSON(w, http.StatusCreated, paymentJSON{
-			ID:         p.ID,
-			MerchantID: p.MerchantID,
-			Amount:     p.Amount,
-			Currency:   p.Currency,
-			CreatedAt:  p.CreatedAt,
-		})
+		writeJSON(w, http.StatusCreated, toJSON(p))
 	}
+}
+
+// getPayment handles GET /payments/{id}: the caller's own payment, or 404 for an unknown id or another merchant's.
+func getPayment(svc *payments.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		merchant := r.Header.Get(merchantHeader)
+		if merchant == "" {
+			writeError(w, http.StatusUnauthorized, "missing X-Merchant-ID header")
+			return
+		}
+		p, err := svc.Get(merchant, r.PathValue("id"))
+		if errors.Is(err, payments.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "payment not found")
+			return
+		}
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "could not read the payment")
+			return
+		}
+		writeJSON(w, http.StatusOK, toJSON(p))
+	}
+}
+
+// toJSON is the wire form of p.
+func toJSON(p payments.Payment) paymentJSON {
+	return paymentJSON{ID: p.ID, MerchantID: p.MerchantID, Amount: p.Amount, Currency: p.Currency, CreatedAt: p.CreatedAt}
 }
