@@ -32,3 +32,8 @@ func (s *Service) Create(merchantID string, amount int64, currency string) (Paym
 	s.store.Put(p)
 	return p, nil
 }
+
+// List returns merchantID's payments, newest first. A merchant with none gets an empty list.
+func (s *Service) List(merchantID string) []Payment {
+	return s.store.ByMerchant(merchantID)
+}

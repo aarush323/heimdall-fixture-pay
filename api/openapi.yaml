@@ -4,6 +4,23 @@ info:
   version: 1.0.0
 paths:
   /payments:
+    get:
+      summary: List the calling merchant's payments, newest first
+      description: Another merchant's payments never appear. A merchant with none gets an empty array.
+      operationId: listPayments
+      parameters:
+        - $ref: '#/components/parameters/MerchantID'
+      responses:
+        '200':
+          description: The merchant's payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+        '401':
+          $ref: '#/components/responses/Error'
     post:
       summary: Create a payment for the calling merchant
       operationId: createPayment

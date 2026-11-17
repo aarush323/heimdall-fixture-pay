@@ -51,3 +51,20 @@ func createPayment(svc *payments.Service) http.HandlerFunc {
 		})
 	}
 }
+
+// listPayments handles GET /payments: the calling merchant's payments, newest first, as a JSON array.
+func listPayments(svc *payments.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		merchant := r.Header.Get(merchantHeader)
+		if merchant == "" {
+			writeError(w, http.StatusUnauthorized, "missing X-Merchant-ID header")
+			return
+		}
+		list := svc.List(merchant)
+		out := make([]paymentJSON, 0, len(list))
+		for _, p := range list {
+			out = append(out, paymentJSON{ID: p.ID, MerchantID: p.MerchantID, Amount: p.Amount, Currency: p.Currency, CreatedAt: p.CreatedAt})
+		}
+		writeJSON(w, http.StatusOK, out)
+	}
+}
