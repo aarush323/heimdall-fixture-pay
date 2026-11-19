@@ -62,3 +62,19 @@ func TestCreateRejectsAnInvalidRequestWithoutStoring(t *testing.T) {
 		t.Error("an invalid payment was stored")
 	}
 }
+
+func TestCountFollowsTheStoredPayments(t *testing.T) {
+	svc, store := newTestService()
+	if got := store.Count(); got != 0 {
+		t.Fatalf("Count() on an empty store = %d, want 0", got)
+	}
+	if _, err := svc.Create("m-1", 100, "USD"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := svc.Create("m-1", 0, "USD"); err == nil {
+		t.Fatal("Create accepted a zero amount")
+	}
+	if got := store.Count(); got != 1 {
+		t.Errorf("Count() = %d, want 1: a refused payment is not stored", got)
+	}
+}
