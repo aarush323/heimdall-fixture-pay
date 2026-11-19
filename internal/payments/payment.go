@@ -11,6 +11,9 @@ import (
 // currencyCode is the alphabetic form the API accepts: three upper-case letters.
 var currencyCode = regexp.MustCompile(`^[A-Z]{3}$`)
 
+// MaxAmount is the largest single payment, in the smallest currency unit (10,000.00 USD). It holds in every currency.
+const MaxAmount int64 = 1_000_000
+
 // Payment is a charge a merchant has taken. Amount is in the smallest unit of Currency (cents for USD).
 type Payment struct {
 	ID         string
@@ -28,6 +31,9 @@ func ValidateNew(merchantID string, amount int64, currency string) error {
 	}
 	if amount < 1 {
 		errs = append(errs, fmt.Errorf("amount: %d is below 1", amount))
+	}
+	if amount > MaxAmount {
+		errs = append(errs, fmt.Errorf("amount: %d is above the cap %d", amount, MaxAmount))
 	}
 	if !currencyCode.MatchString(currency) {
 		errs = append(errs, fmt.Errorf("currency: %q is not three upper-case letters", currency))
