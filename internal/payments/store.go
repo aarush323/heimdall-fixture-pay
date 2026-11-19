@@ -27,3 +27,10 @@ func (s *MemoryStore) Get(id string) (Payment, bool) {
 	p, ok := s.payments[id]
 	return p, ok
 }
+
+// Count returns how many payments the store holds.
+func (s *MemoryStore) Count() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.payments)
+}
