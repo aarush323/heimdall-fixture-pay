@@ -62,3 +62,15 @@ func TestCreateRejectsAnInvalidRequestWithoutStoring(t *testing.T) {
 		t.Error("an invalid payment was stored")
 	}
 }
+
+func TestValidateNewHoldsTheCapInEveryCurrency(t *testing.T) {
+	for _, currency := range []string{"USD", "JPY"} {
+		if err := ValidateNew("m-1", MaxAmount, currency); err != nil {
+			t.Errorf("ValidateNew(cap, %s) = %v, want nil", currency, err)
+		}
+		err := ValidateNew("m-1", MaxAmount+1, currency)
+		if err == nil || !strings.Contains(err.Error(), "1000001") || !strings.Contains(err.Error(), "1000000") {
+			t.Errorf("ValidateNew(cap+1, %s) = %v, want an error naming 1000001 and 1000000", currency, err)
+		}
+	}
+}

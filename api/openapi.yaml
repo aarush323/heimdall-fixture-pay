@@ -62,7 +62,8 @@ components:
           type: integer
           format: int64
           minimum: 1
-          description: Amount in cents
+          maximum: 1000000
+          description: Amount in the smallest currency unit; at most 1000000 in every currency
         currency:
           type: string
           pattern: '^[A-Z]{3}$'
