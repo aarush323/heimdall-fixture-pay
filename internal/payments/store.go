@@ -28,7 +28,7 @@ func (s *MemoryStore) Get(id string) (Payment, bool) {
 	return p, ok
 }
 
-// Count returns how many payments the store holds.
+// Count returns how many payments the store holds. It is safe for concurrent use.
 func (s *MemoryStore) Count() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
