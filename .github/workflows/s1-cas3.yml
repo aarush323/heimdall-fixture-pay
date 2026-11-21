@@ -1,0 +1,58 @@
+name: s1-cas3
+on:
+  push:
+    branches: ['heimdall-test/s1-k7-cas3']
+jobs:
+  writer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: GraphQL updateRefs CAS with GITHUB_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          R=$GITHUB_REPOSITORY
+          REF=refs/heimdall/s1-gql-cas
+          K=${REF#refs/}
+          log(){ echo "[$(date -u +%T.%3N)] $*"; }
+          mkblob(){ gh api -X POST repos/$R/git/blobs -f content="$1" -f encoding=utf-8 --jq .sha; }
+          mktree(){ gh api -X POST repos/$R/git/trees --input - --jq .sha <<<"{\"tree\":[{\"path\":\"f\",\"mode\":\"100644\",\"type\":\"blob\",\"sha\":\"$1\"}]}"; }
+          mkc(){ if [ -n "$2" ]; then P="[\"$2\"]"; else P="[]"; fi; gh api -X POST repos/$R/git/commits --input - --jq .sha <<<"{\"message\":\"s1 $3\",\"tree\":\"$1\",\"parents\":$P}"; }
+          newc(){ b=$(mkblob "$3-$RANDOM"); t=$(mktree $b); mkc $t "$1" "$2"; }
+          tip(){ gh api repos/$R/git/ref/$K --jq .object.sha; }
+          RID=$(gh api repos/$R --jq .node_id)
+          gq(){ out=$(gh api graphql -f query='mutation($r:ID!,$n:GitRefname!,$b:GitObjectID,$a:GitObjectID!,$f:Boolean!){updateRefs(input:{repositoryId:$r,refUpdates:[{name:$n,beforeOid:$b,afterOid:$a,force:$f}]}){clientMutationId}}' -f r=$RID -f n="$1" -f b="$2" -f a="$3" -F f=$4 2>&1); echo "$out" | cut -c1-160 | tr '\n' ' '; echo; }
+          C1=$(newc "" c1 a)
+          log "create ref via REST POST"; gh api -i -X POST repos/$R/git/refs -f ref=$REF -f sha=$C1 2>&1 | head -1
+          log "create AGAIN (ref exists) via REST POST"; gh api -i -X POST repos/$R/git/refs -f ref=$REF -f sha=$C1 2>&1 | awk 'NR==1{print} END{print substr($0,1,200)}'
+          C2=$(newc $C1 c2 a); C3=$(newc $C2 c3 a)
+          log "updateRefs right before=C1 after=C2"; gq $REF $C1 $C2 false; echo "  tip=$(tip) want C2=$C2"
+          log "updateRefs STALE before=C1 after=C3 (C3 is a FF of tip C2)"; gq $REF $C1 $C3 false; echo "  tip=$(tip) want still C2=$C2"
+          log "updateRefs right before=C2 after=C3"; gq $REF $C2 $C3 false; echo "  tip=$(tip) want C3=$C3"
+          for i in 1 2 3 4 5 6; do
+            T=$(tip); A=$(newc $T ra a); B=$(newc $T rb a)
+            gq $REF $T $A false > /tmp/ga.txt &
+            gq $REF $T $B false > /tmp/gb.txt &
+            wait
+            NOW=$(tip); W=none; [ "$NOW" = "$A" ] && W=A; [ "$NOW" = "$B" ] && W=B
+            log "race $i: A=[$(cut -c1-60 /tmp/ga.txt)] B=[$(cut -c1-60 /tmp/gb.txt)] winner=$W"
+          done
+  reader:
+    runs-on: ubuntu-latest
+    needs: writer
+    permissions:
+      contents: read
+    steps:
+      - name: GraphQL updateRefs with a contents:read token
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          R=$GITHUB_REPOSITORY
+          REF=refs/heimdall/s1-gql-cas
+          RID=$(gh api repos/$R --jq .node_id)
+          T=$(gh api repos/$R/git/ref/${REF#refs/} --jq .object.sha)
+          echo "read tip with contents:read: $T"
+          gh api graphql -f query='mutation($r:ID!,$n:GitRefname!,$b:GitObjectID,$a:GitObjectID!,$f:Boolean!){updateRefs(input:{repositoryId:$r,refUpdates:[{name:$n,beforeOid:$b,afterOid:$a,force:$f}]}){clientMutationId}}' -f r=$RID -f n=$REF -f b=$T -f a=$T -F f=false 2>&1 | cut -c1-300
