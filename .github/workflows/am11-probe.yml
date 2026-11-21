@@ -28,7 +28,7 @@ jobs:
           export HEIMDALL_PROBE_CANARY="$canary"
           export PROBE_TREE="$GITHUB_WORKSPACE/am11/probe" PROBE_GO_BIN="$(dirname "$(command -v go)")"
           chmod +x am11/probe.test
-          ./am11/probe.test -test.v -test.run TestEscapeProbes -test.timeout 25m
+          ./am11/probe.test -test.v -test.run TestEscapeProbes -test.timeout 25m "$canary"
       - name: leftovers
         if: always()
         run: |
