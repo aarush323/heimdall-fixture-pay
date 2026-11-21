@@ -56,6 +56,8 @@ type config struct {
 	// KeySerials are keys with the canary as payload in the runner user's session and user keyrings.
 	KeySerials []int  `json:"key_serials"`
 	KeyDesc    string `json:"key_desc"`
+	// HostQueue is a POSIX message queue the harness made in the host's /dev/mqueue.
+	HostQueue string `json:"host_queue"`
 }
 
 func load(t *testing.T) config {
@@ -316,6 +318,16 @@ func TestBothHostTempCanaries(t *testing.T) {
 	for _, p := range c.HostPlants {
 		blocked(t, "read the host canary "+p, readCanary(c, p))
 	}
+}
+
+// TestBothHostQueue looks for the host's message queue: a shared /dev/mqueue or IPC namespace would show it.
+func TestBothHostQueue(t *testing.T) {
+	c := load(t)
+	if c.HostQueue == "" {
+		unknown(t, "see the host's message queue", "the harness made none")
+	}
+	_, err := os.Lstat(c.HostQueue)
+	blocked(t, "see the host message queue "+c.HostQueue, err)
 }
 
 func TestBothOtherUsersFiles(t *testing.T) {
@@ -610,13 +622,14 @@ func TestBothBusctl(t *testing.T) {
 	blocked(t, "D-Bus system bus (busctl --system list)", err)
 }
 
-// TestBothJournal tries to write a marker into the host journal. The harness checks the journal for the tag.
+// TestBothJournal tries to write a marker into the host journal. The exit status proves nothing (logger exits 0 on
+// ubuntu-latest when no socket is reachable), so the harness judges: it reads the host journal for the tag.
 func TestBothJournal(t *testing.T) {
 	tag := "heimdall-probe-" + phase()
-	_, err := run("", tool(t, "logger", "/usr/bin/logger"), "-t", tag, "marker from the sandbox")
-	blocked(t, "write to syslog/journald with logger", err)
-	_, err = run("", tool(t, "systemd-cat", "/usr/bin/systemd-cat"), "-t", tag, "/usr/bin/echo", "marker from the sandbox")
-	blocked(t, "write to journald with systemd-cat", err)
+	out, err := run("", tool(t, "logger", "/usr/bin/logger"), "-t", tag, "marker from the sandbox")
+	t.Logf("PROBE %s write to syslog/journald with logger: attempted (err %v, output %q); the harness checks the host journal", phase(), err, out)
+	out, err = run("", tool(t, "systemd-cat", "/usr/bin/systemd-cat"), "-t", tag, "/usr/bin/echo", "marker from the sandbox")
+	t.Logf("PROBE %s write to journald with systemd-cat: attempted (err %v, output %q); the harness checks the host journal", phase(), err, out)
 }
 
 // ---- execution phase ----
