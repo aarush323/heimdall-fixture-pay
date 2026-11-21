@@ -1,0 +1,39 @@
+name: am11-probe
+on:
+  push:
+    branches: ['heimdall-test/am11-*']
+    paths: ['am11/trigger']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: false
+      - name: facts
+        run: |
+          head -3 /etc/os-release; uname -r; systemctl --version | head -1
+          echo "ImageOS=$ImageOS ImageVersion=$ImageVersion"; go version
+          sysctl kernel.apparmor_restrict_unprivileged_userns net.ipv4.ping_group_range kernel.yama.ptrace_scope || true
+          findmnt -no TARGET,SOURCE,FSTYPE,OPTIONS /dev/shm /dev/mqueue /tmp || true
+      - name: probes
+        run: |
+          canary="$(openssl rand -hex 24)"
+          echo "::add-mask::$canary"
+          export HEIMDALL_PROBE_CANARY="$canary"
+          export PROBE_TREE="$GITHUB_WORKSPACE/am11/probe" PROBE_GO_BIN="$(dirname "$(command -v go)")"
+          chmod +x am11/probe.test
+          ./am11/probe.test -test.v -test.run TestEscapeProbes -test.timeout 25m
+      - name: leftovers
+        if: always()
+        run: |
+          if pgrep -a -u heimdall-sbx; then echo "heimdall-sbx process left"; exit 1; fi
+          echo "no heimdall-sbx process"
+          units="$(systemctl list-units --all --no-legend 'heimdall-sbx-*' || true)"
+          if [ -n "$units" ]; then echo "$units"; exit 1; fi
+          echo "no heimdall-sbx unit"
